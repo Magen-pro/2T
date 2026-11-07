@@ -69,12 +69,23 @@ const CONFIG = {
     name: c.dataset.pack, icon: c.dataset.icon,
     small: c.dataset.small, mid: c.dataset.mid, big: c.dataset.big, el: c
   }));
-  const packByName = (n) => PACKS.find((p) => p.name === n);
+  const SPECIALS = $$(".js-book-service").map((b) => ({
+    name: b.dataset.service, icon: b.dataset.icon,
+    price: Number(b.dataset.price), from: !!b.dataset.from, per: b.dataset.per || ""
+  }));
+  // Every bookable service. nums(size) gives the price list; "from" means a starting price.
+  const SERVICES = [
+    ...PACKS.map((p) => ({ name: p.name, icon: p.icon, group: "Detailing packs", from: false, per: "", nums: (size) => toNumbers(p[size]) })),
+    ...SPECIALS.map((x) => ({ name: x.name, icon: x.icon, group: "Coatings and specialist", from: x.from, per: x.per, nums: () => [x.price] }))
+  ];
+  const serviceByName = (n) => SERVICES.find((x) => x.name === n);
+  const money = (nums, from) => (from ? "From " : "") + rangeText(nums);
+  const unitLabel = (svc, size) => svc.per ? "₹" + formatINR(svc.nums(size)[0]) + " per " + svc.per : money(svc.nums(size), svc.from);
 
   /* ================= Booking state ================= */
   const state = {
     step: 1, maxStep: 1,
-    pack: "", size: "small", car: "", addons: [],
+    pack: "", size: "small", lights: 2, car: "", addons: [],
     date: "", slot: "",
     name: "", phone: "", house: "", street: "", landmark: "", town: "", pin: "",
     gps: null, pastedLink: "", parking: "", notes: ""
@@ -129,7 +140,9 @@ const CONFIG = {
 
     function render() {
       opts = getOptions();
+      let lastGroup = null;
       list.innerHTML = opts.map((o, i) =>
+        (o.group && o.group !== lastGroup ? `<li class="opt-group" role="presentation">${esc((lastGroup = o.group))}</li>` : "") +
         `<li class="opt-item" role="option" id="${uid}-o${i}" data-value="${esc(o.value)}" aria-selected="${o.value === value}">
           ${o.icon ? `<span class="opt-ic">${svg(o.icon)}</span>` : ""}
           <span class="opt-text"><span class="opt-name">${esc(o.label)}</span>${o.sub ? `<span class="opt-sub">${esc(o.sub)}</span>` : ""}</span>
@@ -221,13 +234,28 @@ const CONFIG = {
   document.addEventListener("click", (e) => { if (!e.target.closest(".cselect")) closeAllSelects(); });
 
   const packSelect = CustomSelect($("#packSelect"),
-    () => PACKS.map((p) => ({ value: p.name, label: p.name, icon: p.icon, price: "₹" + p[state.size] })),
-    (v) => { state.pack = v; clearErr("pack"); renderSummary(); });
+    () => SERVICES.map((x) => x.group === "Detailing packs"
+      ? { value: x.name, label: x.name, icon: x.icon, group: x.group, price: "₹" + formatINR(x.nums(state.size)[0]) + (x.nums(state.size).length > 1 ? "+" : "") }
+      : { value: x.name, label: x.name, icon: x.icon, group: x.group, sub: unitLabel(x, state.size) }),
+    (v) => { state.pack = v; clearErr("pack"); syncLights(); renderSummary(); });
 
   const sizeSelect = CustomSelect($("#sizeSelect"),
     () => Object.keys(CONFIG.SIZES).map((k) => ({ value: k, label: CONFIG.SIZES[k].label, sub: CONFIG.SIZES[k].hint, icon: "i-car" })),
     (v) => applySize(v, true));
   sizeSelect.setValue("small", true);
+
+  /* ================= Headlight count ================= */
+  const lightsField = $("#lightsField");
+  const lightBtns = $$("#lightsPick button");
+  function syncLights() {
+    const svc = serviceByName(state.pack);
+    lightsField.hidden = !(svc && svc.per === "headlight");
+  }
+  lightBtns.forEach((b) => b.addEventListener("click", () => {
+    state.lights = Number(b.dataset.value);
+    lightBtns.forEach((x) => x.setAttribute("aria-checked", x === b ? "true" : "false"));
+    renderSummary();
+  }));
 
   /* ================= Errors ================= */
   function setErr(key, msg) {
@@ -494,19 +522,25 @@ const CONFIG = {
 
   /* ================= Totals and summaries ================= */
   function totals() {
-    const p = packByName(state.pack);
-    if (!p) return null;
-    const base = toNumbers(p[state.size]);
+    const svc = serviceByName(state.pack);
+    if (!svc) return null;
+    const qty = svc.per === "headlight" ? state.lights : 1;
+    const base = svc.nums(state.size).map((n) => n * qty);
     const extra = state.addons.length * CONFIG.ADDON_PRICE;
-    return { base, extra, total: base.map((n) => n + extra) };
+    return { svc, qty, base, extra, from: svc.from, total: base.map((n) => n + extra) };
   }
+  const serviceLine = () => {
+    const t = totals();
+    if (!t) return state.pack;
+    return state.pack + (t.svc.per === "headlight" ? " × " + t.qty : "");
+  };
   const sizeText = () => CONFIG.SIZES[state.size].label + " (" + CONFIG.SIZES[state.size].hint + ")";
   const addressText = () => [state.house, state.street, state.landmark ? "Near " + state.landmark : "", state.town].filter(Boolean).join(", ") + (state.pin ? " - " + state.pin : "");
 
   function renderSummary() {
     const t = totals();
     const rows = [
-      ["Pack", state.pack],
+      ["Service", serviceLine()],
       ["Car", state.car ? state.car + " · " + CONFIG.SIZES[state.size].label : CONFIG.SIZES[state.size].label + " car"],
       ["Add-ons", state.addons.join(", ")],
       ["Date and time", state.date ? shortDate(state.date) + (state.slot ? ", " + state.slot : "") : ""],
@@ -514,7 +548,7 @@ const CONFIG = {
     ];
     $("#summary").innerHTML = rows.map(([k, v]) =>
       `<div><dt>${k}</dt><dd class="${v ? "" : "is-empty"}">${v ? esc(v) : "Not chosen yet"}</dd></div>`).join("");
-    $("#summaryTotal").textContent = t ? rangeText(t.total) : "–";
+    $("#summaryTotal").textContent = t ? money(t.total, t.from) : "–";
   }
 
   function renderReview() {
@@ -523,13 +557,14 @@ const CONFIG = {
     const block = (icon, title, step, body) =>
       `<section class="review-block"><div class="review-head"><h4>${svg(icon)}${title}</h4><button type="button" class="review-edit" data-go="${step}">Edit</button></div>${body}</section>`;
     $("#review").innerHTML =
-      block("i-car", "Service", 1, dl([["Pack", state.pack], ["Car size", sizeText()], ["Car", state.car], ["Add-ons", state.addons.join(", ") || "None"]])) +
+      block("i-car", "Service", 1, dl([["Service", state.pack], ["Headlights", totals().svc.per === "headlight" ? String(state.lights) : ""], ["Car size", sizeText()], ["Car", state.car], ["Add-ons", state.addons.join(", ") || "None"]])) +
       block("i-cal", "Date and time", 2, dl([["Date", longDate(state.date)], ["Time", state.slot]])) +
       block("i-pin", "Address", 3, dl([["Name", state.name], ["Phone", state.phone], ["Address", addressText()], ["Map location", state.pastedLink && MAPS_RE.test(state.pastedLink) ? "Google Maps link added" : state.gps ? "GPS pin, about " + fmtDist(state.gps.acc) : ""], ["Parking", state.parking], ["Notes", state.notes]])) +
       `<div class="review-total">
-        <div class="line"><span>${esc(state.pack)}</span><span>${rangeText(t.base)}</span></div>
+        <div class="line"><span>${esc(serviceLine())}</span><span>${money(t.base, t.from)}</span></div>
         ${state.addons.map((a) => `<div class="line"><span>${esc(a)}</span><span>₹${formatINR(CONFIG.ADDON_PRICE)}</span></div>`).join("")}
-        <div class="line total"><span>Estimated total</span><strong>${rangeText(t.total)}</strong></div>
+        <div class="line total"><span>Estimated total</span><strong>${money(t.total, t.from)}</strong></div>
+        ${t.from ? '<p class="review-note">Starting price. The final price is confirmed after we see your car.</p>' : ""}
       </div>`;
   }
 
@@ -543,7 +578,7 @@ const CONFIG = {
     const bad = [];
     const need = (key, ok, msg, focusEl) => { if (!ok) { setErr(key, msg); bad.push(focusEl); } else clearErr(key); };
     if (step === 1) {
-      need("pack", state.pack, "Select a pack.", packSelect.button);
+      need("pack", state.pack, "Select a service.", packSelect.button);
       need("car", state.car, "Enter your car make and model.", carInput);
     }
     if (step === 2) {
@@ -606,7 +641,6 @@ const CONFIG = {
 
   function buildMessage() {
     const t = totals();
-    const p = packByName(state.pack);
     const line = "──────────────";
     const L = [
       "*NEW BOOKING REQUEST*",
@@ -614,7 +648,8 @@ const CONFIG = {
       line,
       "",
       "🚗 *SERVICE*",
-      "• Pack: " + state.pack,
+      "• Service: " + state.pack,
+      t.svc.per === "headlight" ? "• Headlights: " + t.qty : null,
       "• Car: " + state.car,
       "• Size: " + sizeText()
     ];
@@ -637,10 +672,11 @@ const CONFIG = {
     if (state.notes) L.push("", "📝 *NOTES*", state.notes);
     L.push(
       "",
-      "💰 *ESTIMATED TOTAL: " + rangeText(t.total) + "*",
-      "• " + state.pack + ": " + rangeText(toNumbers(p[state.size]))
+      "💰 *ESTIMATED TOTAL: " + money(t.total, t.from) + "*",
+      "• " + serviceLine() + ": " + money(t.base, t.from)
     );
     state.addons.forEach((a) => L.push("• " + a + ": ₹" + formatINR(CONFIG.ADDON_PRICE)));
+    if (t.from) L.push("• Final price confirmed after inspection");
     L.push(line, "Please confirm my slot. Thank you!");
     return L.filter((x) => x !== null).join("\n");
   }
@@ -655,6 +691,14 @@ const CONFIG = {
   $$(".js-book-pack").forEach((b) => b.addEventListener("click", () => {
     const name = b.closest(".pack").dataset.pack;
     packSelect.setValue(name);
+    sizeSelect.setValue(state.size, true);
+    goTo(1, { focus: false });
+    $("#book").scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => carInput.focus({ preventScroll: true }), 600);
+  }));
+
+  $$(".js-book-service").forEach((b) => b.addEventListener("click", () => {
+    packSelect.setValue(b.dataset.service);
     sizeSelect.setValue(state.size, true);
     goTo(1, { focus: false });
     $("#book").scrollIntoView({ behavior: "smooth", block: "start" });
