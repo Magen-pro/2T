@@ -237,7 +237,7 @@ const CONFIG = {
     () => SERVICES.map((x) => x.group === "Detailing packs"
       ? { value: x.name, label: x.name, icon: x.icon, group: x.group, price: "₹" + formatINR(x.nums(state.size)[0]) + (x.nums(state.size).length > 1 ? "+" : "") }
       : { value: x.name, label: x.name, icon: x.icon, group: x.group, sub: unitLabel(x, state.size) }),
-    (v) => { state.pack = v; clearErr("pack"); syncLights(); renderSummary(); });
+    (v) => { state.pack = v; clearErr("pack"); syncLights(); syncAddons(); renderSummary(); });
 
   const sizeSelect = CustomSelect($("#sizeSelect"),
     () => Object.keys(CONFIG.SIZES).map((k) => ({ value: k, label: CONFIG.SIZES[k].label, sub: CONFIG.SIZES[k].hint, icon: "i-car" })),
@@ -270,6 +270,23 @@ const CONFIG = {
   /* ================= Step 1 inputs ================= */
   const carInput = $("#f-car");
   carInput.addEventListener("input", () => { state.car = carInput.value.trim(); clearErr("car"); renderSummary(); });
+  // Add-on prices come from the checkboxes (data-price, data-from)
+  const ADDONS = {};
+  $$("#addonToggles input").forEach((cb) => { ADDONS[cb.value] = { price: Number(cb.dataset.price || CONFIG.ADDON_PRICE), from: !!cb.dataset.from }; });
+  const addonText = (a) => money([ADDONS[a].price], ADDONS[a].from);
+  // AC disinfection is already part of Interior Deep Clean, so it cannot be added twice
+  const acInput = $("#acToggle input");
+  const acPrice = $("#acToggle .toggle-price");
+  function syncAddons() {
+    const included = state.pack === "Interior Deep Clean";
+    acInput.disabled = included;
+    $("#acToggle").classList.toggle("is-included", included);
+    acPrice.textContent = included ? "Included" : acPrice.dataset.normal;
+    if (included && acInput.checked) {
+      acInput.checked = false;
+      state.addons = $$("#addonToggles input:checked").map((c) => c.value);
+    }
+  }
   $$("#addonToggles input").forEach((cb) => cb.addEventListener("change", () => {
     state.addons = $$("#addonToggles input:checked").map((c) => c.value);
     renderSummary();
@@ -526,8 +543,9 @@ const CONFIG = {
     if (!svc) return null;
     const qty = svc.per === "headlight" ? state.lights : 1;
     const base = svc.nums(state.size).map((n) => n * qty);
-    const extra = state.addons.length * CONFIG.ADDON_PRICE;
-    return { svc, qty, base, extra, from: svc.from, total: base.map((n) => n + extra) };
+    const extra = state.addons.reduce((sum, a) => sum + ADDONS[a].price, 0);
+    const from = svc.from || state.addons.some((a) => ADDONS[a].from);
+    return { svc, qty, base, extra, from, total: base.map((n) => n + extra) };
   }
   const serviceLine = () => {
     const t = totals();
@@ -561,8 +579,8 @@ const CONFIG = {
       block("i-cal", "Date and time", 2, dl([["Date", longDate(state.date)], ["Time", state.slot]])) +
       block("i-pin", "Address", 3, dl([["Name", state.name], ["Phone", state.phone], ["Address", addressText()], ["Map location", state.pastedLink && MAPS_RE.test(state.pastedLink) ? "Google Maps link added" : state.gps ? "GPS pin, about " + fmtDist(state.gps.acc) : ""], ["Parking", state.parking], ["Notes", state.notes]])) +
       `<div class="review-total">
-        <div class="line"><span>${esc(serviceLine())}</span><span>${money(t.base, t.from)}</span></div>
-        ${state.addons.map((a) => `<div class="line"><span>${esc(a)}</span><span>₹${formatINR(CONFIG.ADDON_PRICE)}</span></div>`).join("")}
+        <div class="line"><span>${esc(serviceLine())}</span><span>${money(t.base, t.svc.from)}</span></div>
+        ${state.addons.map((a) => `<div class="line"><span>${esc(a)}</span><span>${addonText(a)}</span></div>`).join("")}
         <div class="line total"><span>Estimated total</span><strong>${money(t.total, t.from)}</strong></div>
         ${t.from ? '<p class="review-note">Starting price. The final price is confirmed after we see your car.</p>' : ""}
       </div>`;
@@ -673,9 +691,9 @@ const CONFIG = {
     L.push(
       "",
       "💰 *ESTIMATED TOTAL: " + money(t.total, t.from) + "*",
-      "• " + serviceLine() + ": " + money(t.base, t.from)
+      "• " + serviceLine() + ": " + money(t.base, t.svc.from)
     );
-    state.addons.forEach((a) => L.push("• " + a + ": ₹" + formatINR(CONFIG.ADDON_PRICE)));
+    state.addons.forEach((a) => L.push("• " + a + ": " + addonText(a)));
     if (t.from) L.push("• Final price confirmed after inspection");
     L.push(line, "Please confirm my slot. Thank you!");
     return L.filter((x) => x !== null).join("\n");
