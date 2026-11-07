@@ -275,9 +275,9 @@
     <div class="wrap addons-layout">
       <div class="addon-intro reveal">
         <h2>Add-ons</h2>
-        <p>For stubborn marks that a normal wash cannot lift. Add any of these to a pack when you book.</p>
-        <p class="addon-intro-price"><span>₹1,000</span> each</p>
-        <p class="addon-intro-note">Same price for every car size</p>
+        <p>For stubborn marks a normal wash cannot lift, and a fresher cabin. Add any of these to your service when you book.</p>
+        <p class="addon-intro-price">From <span>₹1,000</span></p>
+        <p class="addon-intro-note">Price shown on each add-on</p>
         <a class="btn btn-gold" href="#book">Add to my booking</a>
       </div>
 
@@ -286,21 +286,31 @@
           <span class="addon-ic"><svg class="ic"><use href="#i-bricks"/></svg></span>
           <h3>Cement removal</h3>
           <p>Lifts dried cement and concrete splashes from paint and glass.</p>
+          <span class="addon-price">₹1,000</span>
         </li>
         <li class="addon reveal">
           <span class="addon-ic"><svg class="ic"><use href="#i-bug"/></svg></span>
           <h3>Car bug removal</h3>
           <p>Clears dried insect marks from the bumper, bonnet and mirrors.</p>
+          <span class="addon-price">₹1,000</span>
         </li>
         <li class="addon reveal">
           <span class="addon-ic"><svg class="ic"><use href="#i-spot"/></svg></span>
           <h3>Water spot removal</h3>
           <p>Removes hard-water marks left on paint and glass after drying.</p>
+          <span class="addon-price">₹1,000</span>
         </li>
         <li class="addon reveal">
           <span class="addon-ic"><svg class="ic"><use href="#i-brush"/></svg></span>
           <h3>Paint transfer removal</h3>
           <p>Takes off paint scuffs left by another car, a wall or a gate.</p>
+          <span class="addon-price">₹1,000</span>
+        </li>
+        <li class="addon addon-wide reveal">
+          <span class="addon-ic"><svg class="ic"><use href="#i-snow"/></svg></span>
+          <h3>AC disinfection</h3>
+          <p>Eliminates bad odour and prevents mould forming in the AC ducts. Already included in Interior Deep Clean.</p>
+          <span class="addon-price">From ₹1,200</span>
         </li>
       </ul>
     </div>
@@ -341,7 +351,7 @@
             </div>
           </div>
         </article>
-        <article class="svc reveal">
+        <article class="svc svc-wide reveal">
           <figure class="svc-media"><img src="https://images.unsplash.com/photo-1758804023315-b6c8af376be5?auto=format&fit=crop&w=900&h=560&q=75" alt="Close-up of a car headlight" width="900" height="560" loading="lazy" onerror="this.parentNode.classList.add('no-img');this.remove()"></figure>
           <div class="svc-body">
             <span class="svc-icon"><svg class="ic"><use href="#i-light"/></svg></span>
@@ -357,18 +367,6 @@
                 <button type="button" class="btn btn-outline btn-sm js-book-service" data-service="Headlight Restoration with UV Coating" data-price="1500" data-per="headlight" data-icon="i-light" aria-label="Book headlight restoration with UV coating">Book</button>
               </li>
             </ul>
-          </div>
-        </article>
-        <article class="svc reveal">
-          <figure class="svc-media"><img src="https://images.unsplash.com/photo-1752552055661-fbb9ef5398fe?auto=format&fit=crop&w=900&h=560&q=75" alt="A car air conditioning vent on a leather dashboard" width="900" height="560" loading="lazy" onerror="this.parentNode.classList.add('no-img');this.remove()"></figure>
-          <div class="svc-body">
-            <span class="svc-icon"><svg class="ic"><use href="#i-snow"/></svg></span>
-            <h3>AC Disinfection</h3>
-            <p class="svc-desc">Eliminates bad odour and prevents mould forming in the AC ducts.</p>
-            <div class="svc-foot">
-              <p class="svc-price"><span class="svc-from">From</span><span class="svc-amt">₹1,200</span></p>
-              <button type="button" class="btn btn-outline btn-sm js-book-service" data-service="AC Disinfection" data-price="1200" data-from="1" data-icon="i-snow">Book</button>
-            </div>
           </div>
         </article>
       </div>
@@ -477,12 +475,13 @@
             </div>
 
             <div class="field">
-              <span class="label">Add-ons <span class="opt">optional, ₹1,000 each</span></span>
+              <span class="label">Add-ons <span class="opt">optional</span></span>
               <div class="toggle-grid" id="addonToggles">
-                <label class="toggle"><input type="checkbox" value="Cement removal"><span class="toggle-box"><svg class="ic"><use href="#i-bricks"/></svg>Cement removal</span></label>
-                <label class="toggle"><input type="checkbox" value="Car bug removal"><span class="toggle-box"><svg class="ic"><use href="#i-bug"/></svg>Car bug removal</span></label>
-                <label class="toggle"><input type="checkbox" value="Water spot removal"><span class="toggle-box"><svg class="ic"><use href="#i-spot"/></svg>Water spot removal</span></label>
-                <label class="toggle"><input type="checkbox" value="Paint transfer removal"><span class="toggle-box"><svg class="ic"><use href="#i-brush"/></svg>Paint transfer removal</span></label>
+                <label class="toggle"><input type="checkbox" value="Cement removal" data-price="1000"><span class="toggle-box"><svg class="ic"><use href="#i-bricks"/></svg><span class="toggle-name">Cement removal</span><span class="toggle-price">₹1,000</span></span></label>
+                <label class="toggle"><input type="checkbox" value="Car bug removal" data-price="1000"><span class="toggle-box"><svg class="ic"><use href="#i-bug"/></svg><span class="toggle-name">Car bug removal</span><span class="toggle-price">₹1,000</span></span></label>
+                <label class="toggle"><input type="checkbox" value="Water spot removal" data-price="1000"><span class="toggle-box"><svg class="ic"><use href="#i-spot"/></svg><span class="toggle-name">Water spot removal</span><span class="toggle-price">₹1,000</span></span></label>
+                <label class="toggle"><input type="checkbox" value="Paint transfer removal" data-price="1000"><span class="toggle-box"><svg class="ic"><use href="#i-brush"/></svg><span class="toggle-name">Paint transfer removal</span><span class="toggle-price">₹1,000</span></span></label>
+                <label class="toggle" id="acToggle"><input type="checkbox" value="AC disinfection" data-price="1200" data-from="1"><span class="toggle-box"><svg class="ic"><use href="#i-snow"/></svg><span class="toggle-name">AC disinfection</span><span class="toggle-price" data-normal="From ₹1,200">From ₹1,200</span></span></label>
               </div>
             </div>
           </fieldset>
