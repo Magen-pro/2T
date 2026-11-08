@@ -230,6 +230,29 @@
   if (phone && n.length > 2) phone.textContent = "+" + n.slice(0, 2) + " " + n.slice(2, 7) + " " + n.slice(7);
   const year = $("#year"); if (year) year.textContent = new Date().getFullYear();
 
+  /* ================= Clean address bar: no #section ================= */
+  // Menu links still scroll to their section, but the address stays yourdomain.in
+  const onHome = !!document.getElementById("packs");
+  const goSection = (id, smooth) => {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    if (id === "top") window.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
+    else el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+    return true;
+  };
+  document.addEventListener("click", (e) => {
+    if (!onHome || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    const a = e.target.closest("a[href]");
+    const m = a && a.getAttribute("href").match(/^\/?#([\w-]+)$/);
+    if (m && goSection(m[1], true)) e.preventDefault();
+  });
+  // Arriving from the booking page with /#packs: scroll there, then tidy the address
+  if (onHome && location.hash.length > 1) {
+    const id = location.hash.slice(1);
+    history.replaceState(null, "", location.pathname);
+    requestAnimationFrame(() => goSection(id, false));
+  }
+
   /* ================= Mobile menu ================= */
   const menuBtn = $("#menuBtn");
   const menu = $("#mobileMenu");
