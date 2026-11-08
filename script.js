@@ -16,20 +16,19 @@ const CONFIG = {
     big:   { label: "Big",   hint: "SUV and 7-seater" }
   },
 
-  // TODO: confirm working hours with the client
-  TIME_SLOTS: ["8:00 AM", "9:30 AM", "11:00 AM", "12:30 PM", "2:00 PM", "3:30 PM", "5:00 PM"],
+  // Open every day, 5 AM to 7 PM
+  TIME_SLOTS: ["5:00 AM", "6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM",
+               "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM", "6:00 PM", "7:00 PM"],
   BOOK_DAYS_AHEAD: 60,      // how far ahead customers can book
-  CLOSED_WEEKDAYS: [],      // 0 = Sunday ... 6 = Saturday. Example: [0] closes Sundays
+  CLOSED_WEEKDAYS: [],      // open all 7 days. To close a day: 0 = Sunday ... 6 = Saturday
   MIN_LEAD_MINUTES: 90,     // same-day slots must be at least this far from now
 
-  // Shared GPS locations outside this box are rejected as wrong (roughly Kerala, with a margin)
-  SERVICE_BOUNDS: { minLat: 7.9, maxLat: 13.2, minLng: 74.6, maxLng: 77.7 },
+  // Shared GPS locations outside this box are rejected as wrong (Wayanad and Gudalur, with a margin)
+  SERVICE_BOUNDS: { minLat: 11.2, maxLat: 12.15, minLng: 75.55, maxLng: 76.85 },
   MAX_LOCATION_ERROR_M: 1000, // reject GPS readings less accurate than this
   GOOD_LOCATION_M: 30,        // stop refining once the reading is this accurate
 
-  // Towns or districts shown as chips in the "Serving across Kerala" band.
-  // Example: ["Kochi", "Thrissur", "Kottayam"]. Leave empty to hide.
-  SERVICE_AREAS: []
+  // Places served are listed in index.html (section "areas"); edit them there.
 };
 
 (function () {
@@ -391,6 +390,7 @@ const CONFIG = {
     if (m[3].toUpperCase() === "PM") h += 12;
     return h * 60 + parseInt(m[2], 10);
   };
+  const slotGroup = (label) => { const m = toMinutes(label); return m < 12 * 60 ? "Morning" : m < 16 * 60 ? "Afternoon" : "Evening"; };
   function slotsFor(iso) {
     const now = new Date();
     const nowMin = now.getHours() * 60 + now.getMinutes() + CONFIG.MIN_LEAD_MINUTES;
@@ -399,14 +399,23 @@ const CONFIG = {
   function renderSlots() {
     $("#slotDate").textContent = state.date ? longDate(state.date) : "Choose a date first";
     if (!state.date) {
-      slotsWrap.innerHTML = CONFIG.TIME_SLOTS.map((l) => `<button type="button" class="slot" role="radio" aria-checked="false" disabled>${svg("i-clock")}${l}</button>`).join("");
+      let lastG = "";
+      slotsWrap.innerHTML = CONFIG.TIME_SLOTS.map((l) => {
+        const g = slotGroup(l);
+        const head = g !== lastG ? `<p class="slot-group">${(lastG = g)}</p>` : "";
+        return head + `<button type="button" class="slot" role="radio" aria-checked="false" disabled>${svg("i-clock")}${l}</button>`;
+      }).join("");
       return;
     }
     const list = slotsFor(state.date);
     const sel = list.findIndex((s) => s.label === state.slot);
     const firstOk = list.findIndex((s) => s.ok);
-    slotsWrap.innerHTML = list.map((s, i) =>
-      `<button type="button" class="slot" role="radio" data-slot="${s.label}" aria-checked="${s.label === state.slot}" tabindex="${(sel >= 0 ? i === sel : i === firstOk) ? 0 : -1}" ${s.ok ? "" : "disabled"}>${svg("i-clock")}${s.label}</button>`).join("");
+    let lastGroup = "";
+    slotsWrap.innerHTML = list.map((s, i) => {
+      const g = slotGroup(s.label);
+      const head = g !== lastGroup ? `<p class="slot-group">${(lastGroup = g)}</p>` : "";
+      return head + `<button type="button" class="slot" role="radio" data-slot="${s.label}" aria-checked="${s.label === state.slot}" tabindex="${(sel >= 0 ? i === sel : i === firstOk) ? 0 : -1}" ${s.ok ? "" : "disabled"}>${svg("i-clock")}${s.label}</button>`;
+    }).join("");
   }
   slotsWrap.addEventListener("click", (e) => {
     const b = e.target.closest(".slot");
@@ -448,7 +457,7 @@ const CONFIG = {
   const locateResult = $("#locateResult");
   const mapLinkInput = $("#f-maplink");
   const fmtDist = (m) => (m >= 1000 ? (m / 1000).toFixed(1) + " km" : Math.round(m) + " m");
-  // Test mode: open the site with ?testlocation to skip the Kerala check and see raw readings
+  // Test mode: open the site with ?testlocation to skip the service-area check and see raw readings
   const TEST_LOC = new URLSearchParams(location.search).has("testlocation");
   const inArea = (la, lo) => { if (TEST_LOC) return true; const b = CONFIG.SERVICE_BOUNDS; return la >= b.minLat && la <= b.maxLat && lo >= b.minLng && lo <= b.maxLng; };
   const MAPS_RE = /^https?:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|(www\.)?google\.[a-z.]+\/maps|maps\.google\.[a-z.]+)\S*$/i;
@@ -478,7 +487,7 @@ const CONFIG = {
     const { latitude: la, longitude: lo, accuracy: acc } = best.coords;
     if (!inArea(la, lo)) {
       state.gps = null; locateResult.hidden = true;
-      setLocState("is-warn", "Your device gave a location outside Kerala, so it is not correct. This happens on laptops, or when GPS or precise location is off. Try on your phone with GPS on, or paste a Google Maps link below.");
+      setLocState("is-warn", "Your device gave a location outside Wayanad and Gudalur, so it is probably not correct. This happens on laptops, or when GPS or precise location is off. Try on your phone with GPS on, or paste a Google Maps link below.");
       renderSummary(); return;
     }
     if (acc > CONFIG.MAX_LOCATION_ERROR_M) {
@@ -492,7 +501,7 @@ const CONFIG = {
     locateResult.hidden = false;
     locateBtnText.textContent = "Update location";
     setLocState("is-done", acc > 100 ? "This pin is approximate. Please add a landmark so we can find you." : "Check the pin on the map before you send.");
-    if (TEST_LOC) locateStatus.textContent = "Test mode (Kerala check off). Lat " + la.toFixed(6) + ", Lng " + lo.toFixed(6) + ", accuracy " + fmtDist(acc) + ".";
+    if (TEST_LOC) locateStatus.textContent = "Test mode (area check off). Lat " + la.toFixed(6) + ", Lng " + lo.toFixed(6) + ", accuracy " + fmtDist(acc) + ".";
     renderSummary();
   }
   const gpsLink = () => state.gps ? "https://www.google.com/maps?q=" + state.gps.la.toFixed(6) + "," + state.gps.lo.toFixed(6) : "";
@@ -518,7 +527,7 @@ const CONFIG = {
     }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
     stopTimer = setTimeout(() => finishGps(best), 15000);
   });
-  if (TEST_LOC) setLocState("", "Test mode is on: the Kerala check is switched off.");
+  if (TEST_LOC) setLocState("", "Test mode is on: the service-area check is switched off.");
   $("#locateClear").addEventListener("click", () => { clearGps(); locateBtn.focus(); });
 
   mapLinkInput.addEventListener("input", () => {
@@ -738,15 +747,139 @@ const CONFIG = {
       entries.forEach((en) => { if (en.isIntersecting) seen.add(en.target); else seen.delete(en.target); });
       sticky.classList.toggle("is-hidden", seen.size > 0);
     }, { threshold: 0.05 });
-    [$(".hero-actions"), $("#book"), $(".cta-band"), $(".site-footer")].forEach((el) => el && obs.observe(el));
+    [$(".hero-actions"), $("#areas"), $("#book"), $(".cta-band"), $(".site-footer")].forEach((el) => el && obs.observe(el));
   }
 
   /* ================= Area chips, footer ================= */
-  const chips = $("#areaChips");
-  CONFIG.SERVICE_AREAS.forEach((a) => { const li = document.createElement("li"); li.textContent = a; chips.appendChild(li); });
   const n = CONFIG.WHATSAPP_NUMBER;
   if (n.length > 2) $("#footerPhone").textContent = "+" + n.slice(0, 2) + " " + n.slice(2, 7) + " " + n.slice(7);
   $("#year").textContent = new Date().getFullYear();
+
+  /* ================= Service area checker ================= */
+  const norm = (t) => String(t).toLowerCase().replace(/[^a-z]/g, "");
+  const PLACES = $$(".place").map((b) => {
+    const name = b.firstChild.textContent.trim();
+    const keys = [name].concat((b.dataset.aka || "").split(",")).map(norm).filter(Boolean);
+    return { name, kind: name === "Gudalur" ? "Town, Tamil Nadu" : b.dataset.kind, keys };
+  });
+  const isServed = (t) => PLACES.some((p) => p.keys.includes(norm(t)));
+  function editDistance(a, b) {
+    const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+    for (let j = 1; j <= b.length; j++) d[0][j] = j;
+    for (let i = 1; i <= a.length; i++)
+      for (let j = 1; j <= b.length; j++)
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    return d[a.length][b.length];
+  }
+  // Lower score = better match. Allows common spellings and small typos.
+  function matchPlaces(q) {
+    const n = norm(q);
+    if (n.length < 2) return [];
+    const scored = PLACES.map((p) => {
+      let best = 99;
+      p.keys.forEach((k) => {
+        if (k === n) best = Math.min(best, 0);
+        else if (k.startsWith(n)) best = Math.min(best, 1);
+        else if (n.length >= 3 && k.includes(n)) best = Math.min(best, 2);
+        else if (n.length >= 4) {
+          const dist = editDistance(n, k.slice(0, Math.max(n.length, Math.min(k.length, n.length + 1))));
+          const full = editDistance(n, k);
+          const tol = n.length >= 7 ? 2 : 1;
+          if (Math.min(dist, full) <= tol) best = Math.min(best, 3 + Math.min(dist, full));
+        }
+      });
+      return { p, best };
+    }).filter((x) => x.best < 99);
+    scored.sort((a, b) => a.best - b.best || a.p.name.localeCompare(b.p.name));
+    return scored.slice(0, 6);
+  }
+
+  const areaInput = $("#areaInput");
+  const areaSuggest = $("#areaSuggest");
+  const areaResult = $("#areaResult");
+  const waAsk = (place) => waLink("Hello " + CONFIG.BUSINESS_NAME + ", do you provide doorstep car detailing in " + place + "?");
+
+  function showResult(place, found) {
+    areaSuggest.hidden = true;
+    areaResult.className = "area-result " + (found ? "is-yes" : "is-no");
+    areaResult.innerHTML = found
+      ? `<div class="area-result-text">${svg("i-check")}<span><strong>Yes, we come to ${esc(place.name)}.</strong> Book a time that suits you.</span></div>
+         <button type="button" class="btn btn-primary btn-sm" data-book-town="${esc(place.name)}">Book in ${esc(place.name)}</button>`
+      : `<div class="area-result-text">${svg("i-pin")}<span><strong>${esc(place)} is not on our list yet.</strong> We may still reach you. Ask us and we will confirm.</span></div>
+         <a class="btn btn-gold btn-sm" href="${waAsk(place)}" target="_blank" rel="noopener">${svg("i-wa")}Ask on WhatsApp</a>`;
+  }
+  function renderSuggest() {
+    const q = areaInput.value.trim();
+    const hits = matchPlaces(q);
+    areaResult.className = "area-result"; areaResult.innerHTML = "";
+    if (!q) { areaSuggest.hidden = true; return; }
+    if (hits.length && hits[0].best === 0) { showResult(hits[0].p, true); return; }
+    if (!hits.length) {
+      areaSuggest.hidden = true;
+      if (norm(q).length >= 3) showResult(q, false);
+      return;
+    }
+    areaSuggest.innerHTML = hits.map(({ p }) =>
+      `<li><button type="button" class="suggest-item" data-place="${esc(p.name)}">${svg("i-pin")}<span>${esc(p.name)}</span><small>${esc(p.kind)}</small></button></li>`).join("");
+    areaSuggest.hidden = false;
+  }
+  areaInput.addEventListener("input", renderSuggest);
+  areaInput.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" && !areaSuggest.hidden) { e.preventDefault(); const f = $(".suggest-item", areaSuggest); if (f) f.focus(); }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const hits = matchPlaces(areaInput.value);
+      if (hits.length) { areaInput.value = hits[0].p.name; showResult(hits[0].p, true); }
+      else if (areaInput.value.trim()) showResult(areaInput.value.trim(), false);
+    }
+    if (e.key === "Escape") areaSuggest.hidden = true;
+  });
+  areaSuggest.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-place]");
+    if (!b) return;
+    const p = PLACES.find((x) => x.name === b.dataset.place);
+    areaInput.value = p.name; showResult(p, true);
+    const btn = $("[data-book-town]", areaResult); if (btn) btn.focus();
+  });
+  areaSuggest.addEventListener("keydown", (e) => {
+    const items = $$(".suggest-item", areaSuggest);
+    const i = items.indexOf(document.activeElement);
+    if (e.key === "ArrowDown") { e.preventDefault(); (items[i + 1] || items[0]).focus(); }
+    if (e.key === "ArrowUp") { e.preventDefault(); i <= 0 ? areaInput.focus() : items[i - 1].focus(); }
+    if (e.key === "Escape") { areaSuggest.hidden = true; areaInput.focus(); }
+  });
+  $$(".place").forEach((b) => b.addEventListener("click", () => {
+    const p = PLACES.find((x) => x.name === b.firstChild.textContent.trim());
+    areaInput.value = p.name; showResult(p, true);
+    areaResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }));
+  areaResult.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-book-town]");
+    if (!b) return;
+    const town = b.dataset.bookTown;
+    const t = $("#f-town"); t.value = town; state.town = town; syncTownHint();
+    renderSummary();
+    $("#book").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  const villagesBox = $("#villages");
+  const villagesToggle = $("#villagesToggle");
+  villagesToggle.addEventListener("click", () => {
+    const open = villagesBox.hidden;
+    villagesBox.hidden = !open;
+    villagesToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    $("span", villagesToggle).textContent = open ? "Hide villages" : "Show " + $$(".place", villagesBox).length + " villages";
+  });
+
+  // Booking form: gentle note when the town is not on the list (never blocks booking)
+  const townHint = $("#townHint");
+  function syncTownHint() {
+    const t = $("#f-town").value.trim();
+    const show = t.length >= 3 && !isServed(t);
+    townHint.hidden = !show;
+    if (show) townHint.textContent = t + " is not on our usual list. Send the booking anyway and we will confirm on WhatsApp if we can reach you.";
+  }
+  $("#f-town").addEventListener("change", syncTownHint);
+  $("#f-town").addEventListener("blur", syncTownHint);
 
   /* ================= Mobile menu ================= */
   const menuBtn = $("#menuBtn");
