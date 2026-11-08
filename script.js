@@ -5,9 +5,9 @@
    ------------------------------------------------------------------ */
 const CONFIG = {
   // Country code + number, digits only. Example: "919876543210"
-  WHATSAPP_NUMBER: "919629885790",
+  WHATSAPP_NUMBER: "916235053966",
   BUSINESS_NAME: "2T Doorstep Car Detailing",
-  ADDON_PRICE: 1000,
+  ADDON_PRICE: 999,
 
   // TODO: confirm with client what Small / Mid / Big mean
   SIZES: {
