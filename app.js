@@ -224,17 +224,6 @@
     a.rel = "noopener";
   });
 
-  /* ================= Sticky "Book now" on phones ================= */
-  const sticky = $("#stickyCta");
-  if (sticky && "IntersectionObserver" in window) {
-    const seen = new Set();
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach((en) => { if (en.isIntersecting) seen.add(en.target); else seen.delete(en.target); });
-      sticky.classList.toggle("is-hidden", seen.size > 0);
-    }, { threshold: 0.05 });
-    [$(".hero-actions"), $("#areas"), $(".cta-band"), $(".site-footer")].forEach((el) => el && obs.observe(el));
-  }
-
   /* ================= Footer ================= */
   const n = CONFIG.WHATSAPP_NUMBER;
   const phone = $("#footerPhone");
