@@ -20,7 +20,7 @@
   const waLink = (msg) => "https://wa.me/" + CONFIG.WHATSAPP_NUMBER + "?text=" + encodeURIComponent(msg);
   const bookUrl = (params) => {
     const q = Object.keys(params).filter((k) => params[k]).map((k) => k + "=" + encodeURIComponent(params[k])).join("&");
-    return "book.html" + (q ? "?" + q : "");
+    return "/book" + (q ? "?" + q : "");
   };
 
   /* ================= Services from data.js ================= */
@@ -143,7 +143,7 @@
   $$("a.js-book-pack, a.js-book-service").forEach((a) => a.addEventListener("click", () => {
     const url = new URL(a.getAttribute("href"), location.href);
     url.searchParams.set("size", homeSize);
-    a.href = "book.html" + url.search;
+    a.href = "/book" + url.search;
   }));
 
   /* ================= Home page: service area checker ================= */

@@ -629,7 +629,7 @@
   if (placeList) placeList.innerHTML = SITE.TOWNS.concat(SITE.VILLAGES).map((p) => `<option value="${esc(p.name)}">`).join("");
 
   /* ================= Start: fill in choices from the link ================= */
-  // book.html?service=Basic%20Wash&size=mid&town=Kalpetta
+  // /book?service=Basic%20Wash&size=mid&town=Kalpetta
   const params = new URLSearchParams(location.search);
   setSize(params.get("size") || "small");
   const wanted = params.get("service");
