@@ -86,7 +86,7 @@ a, button, input, label { -webkit-tap-highlight-color: transparent; }
 }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 60px; }
 .brand { display: flex; align-items: center; gap: 11px; text-decoration: none; }
-.brand-mark { height: 34px; width: auto; flex: none; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35)); }
+.brand-mark { width: 40px; height: 40px; flex: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35); }
 .brand-text { display: grid; line-height: 1.15; }
 .brand-name { font-weight: 700; font-size: 1rem; letter-spacing: -0.02em; }
 .brand-sub { font-size: 0.74rem; color: var(--muted); }
@@ -696,7 +696,7 @@ body.menu-open { overflow: hidden; }
 .footer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 20px; padding-bottom: 32px; }
 .footer-grid .footer-col:first-child { grid-column: 1 / -1; }
 .footer-logo { display: inline-block; }
-.footer-logo img { width: 220px; height: auto; display: block; }
+.footer-logo img { width: 220px; height: auto; display: block; mix-blend-mode: screen; }
 .footer-col h3 { font-size: 0.95rem; color: #fff; margin-bottom: 12px; letter-spacing: -0.01em; }
 .footer-col ul { display: grid; gap: 4px; }
 .footer-col a { overflow-wrap: anywhere; min-height: 36px; text-decoration: none; color: rgba(215, 234, 223, 0.82); transition: color .2s; display: inline-flex; align-items: center; gap: 8px; }
