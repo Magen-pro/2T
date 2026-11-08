@@ -455,7 +455,7 @@ body.menu-open { overflow: hidden; }
 .addon-intro > * { position: relative; z-index: 1; }
 .addon-intro h2 { color: #fff; }
 .addon-intro > p:first-of-type { margin-top: 12px; font-size: 1rem; color: rgba(234, 246, 239, 0.84); max-width: 34ch; }
-.addon-intro-price { margin-top: auto; padding-top: 24px; font-size: 1rem; color: rgba(234, 246, 239, 0.84); }
+.addon-intro-price { padding-top: 24px; font-size: 1rem; color: rgba(234, 246, 239, 0.84); }
 .addon-intro-price span { font-size: 2.6rem; font-weight: 800; letter-spacing: -0.05em; color: var(--gold-light); margin-right: 6px; }
 .addon-intro-note { font-size: 0.88rem; color: rgba(234, 246, 239, 0.68); margin-bottom: 20px; }
 .addon-intro .btn { width: 100%; }
@@ -902,9 +902,9 @@ body.menu-open { overflow: hidden; }
   .pack-grid { grid-template-columns: repeat(3, 1fr); gap: 22px; }
   .price .amt { font-size: 3rem; }
 
-  .addons-layout { grid-template-columns: 0.85fr 1.4fr; gap: 22px; align-items: stretch; }
-  .addon-intro { padding: 40px; }
-  .addon-intro-price { padding-top: 34px; }
+  .addons-layout { grid-template-columns: 0.85fr 1.4fr; gap: 22px 48px; align-items: start; }
+  .addon-intro { padding: 8px 0 0; position: sticky; top: 100px; }
+  .addon-intro-price { padding-top: 28px; }
   .addon-intro-price span { font-size: 3.4rem; }
   .addon-grid { gap: 18px; }
   .addon { padding: 26px; }
