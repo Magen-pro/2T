@@ -630,7 +630,17 @@
 
   /* ================= Start: fill in choices from the link ================= */
   // /book?service=Basic%20Wash&size=mid&town=Kalpetta
-  const params = new URLSearchParams(location.search);
+  // Choices arrive in the link, then the address is tidied to just /book.
+  // They are kept for this tab so a page refresh does not lose them.
+  let query = location.search;
+  try {
+    const nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
+    if (query) sessionStorage.setItem("2t-book", query);
+    else if (nav && nav.type === "reload") query = sessionStorage.getItem("2t-book") || "";
+    else sessionStorage.removeItem("2t-book");
+  } catch (e) { /* storage unavailable: choices still work, just not after a refresh */ }
+  if (location.search) history.replaceState(null, "", location.pathname);
+  const params = new URLSearchParams(query);
   setSize(params.get("size") || "small");
   const wanted = params.get("service");
   if (wanted && serviceByName(wanted)) packSelect.setValue(wanted);
