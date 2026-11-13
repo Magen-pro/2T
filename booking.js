@@ -129,7 +129,9 @@
   document.addEventListener("click", (e) => { if (!e.target.closest(".cselect")) closeAllSelects(); });
 
   const packSelect = CustomSelect($("#packSelect"),
-    () => SERVICES.map((x) => x.group === "Detailing packs"
+    () => SERVICES.map((x) => x.monthly
+      ? { value: x.name, label: x.name, icon: x.icon, group: x.group, sub: x.visits + " washes a month", price: "₹" + formatINR(x.nums(state.size)[0]) + "/mo" }
+      : x.group === "Detailing packs"
       ? { value: x.name, label: x.name, icon: x.icon, group: x.group, price: "₹" + formatINR(x.nums(state.size)[0]) + (x.nums(state.size).length > 1 ? "+" : "") }
       : { value: x.name, label: x.name, icon: x.icon, group: x.group, sub: unitLabel(x, state.size) }),
     (v) => { state.pack = v; clearErr("pack"); syncLights(); syncAddons(); renderSummary(); });
@@ -455,6 +457,9 @@
     const from = svc.from || state.addons.some((a) => ADDONS[a].from);
     return { svc, qty, base, extra, from, total: base.map((n) => n + extra) };
   }
+  // Monthly plans show "/ month"; with one-time add-ons the total is for the first month
+  const totalText = (t) => money(t.total, t.from) + (t.svc.monthly ? (t.extra ? " first month" : " / month") : "");
+  const baseText = (t) => money(t.base, t.svc.from) + (t.svc.monthly ? " / month" : "");
   const serviceLine = () => {
     const t = totals();
     if (!t) return state.pack;
@@ -474,7 +479,8 @@
     ];
     $("#summary").innerHTML = rows.map(([k, v]) =>
       `<div><dt>${k}</dt><dd class="${v ? "" : "is-empty"}">${v ? esc(v) : "Not chosen yet"}</dd></div>`).join("");
-    $("#summaryTotal").textContent = t ? money(t.total, t.from) : "–";
+    $("#summaryTotal").textContent = t ? totalText(t) : "–";
+    const dl = $("#cal-label"); if (dl) dl.textContent = t && t.svc.monthly ? "Date of first wash" : "Date";
   }
 
   function renderReview() {
@@ -487,9 +493,9 @@
       block("i-cal", "Date and time", 2, dl([["Date", longDate(state.date)], ["Time", state.slot]])) +
       block("i-pin", "Address", 3, dl([["Name", state.name], ["Phone", state.phone], ["Address", addressText()], ["Map location", state.pastedLink && MAPS_RE.test(state.pastedLink) ? "Google Maps link added" : state.gps ? "GPS pin, about " + fmtDist(state.gps.acc) : ""], ["Parking", state.parking], ["Notes", state.notes]])) +
       `<div class="review-total">
-        <div class="line"><span>${esc(serviceLine())}</span><span>${money(t.base, t.svc.from)}</span></div>
+        <div class="line"><span>${esc(serviceLine())}</span><span>${baseText(t)}</span></div>
         ${state.addons.map((a) => `<div class="line"><span>${esc(a)}</span><span>${addonText(a)}</span></div>`).join("")}
-        <div class="line total"><span>Estimated total</span><strong>${money(t.total, t.from)}</strong></div>
+        <div class="line total"><span>Estimated total</span><strong>${totalText(t)}</strong></div>
         ${t.from ? '<p class="review-note">Starting price. The final price is confirmed after we see your car.</p>' : ""}
       </div>`;
   }
@@ -576,13 +582,14 @@
       "🚗 *SERVICE*",
       "• Service: " + state.pack,
       t.svc.per === "headlight" ? "• Headlights: " + t.qty : null,
+      t.svc.monthly ? "• Plan: " + t.svc.visits + " washes a month" : null,
       "• Car: " + state.car,
       "• Size: " + sizeText()
     ];
     if (state.addons.length) L.push("• Add-ons: " + state.addons.join(", "));
     L.push(
       "",
-      "📅 *DATE AND TIME*",
+      t.svc.monthly ? "📅 *FIRST WASH*" : "📅 *DATE AND TIME*",
       "• " + longDate(state.date) + ", " + dateOf(state.date).getFullYear(),
       "• " + state.slot,
       "",
@@ -598,8 +605,8 @@
     if (state.notes) L.push("", "📝 *NOTES*", state.notes);
     L.push(
       "",
-      "💰 *ESTIMATED TOTAL: " + money(t.total, t.from) + "*",
-      "• " + serviceLine() + ": " + money(t.base, t.svc.from)
+      "💰 *ESTIMATED TOTAL: " + totalText(t) + "*",
+      "• " + serviceLine() + ": " + baseText(t)
     );
     state.addons.forEach((a) => L.push("• " + a + ": " + addonText(a)));
     if (t.from) L.push("• Final price confirmed after inspection");

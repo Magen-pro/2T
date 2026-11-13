@@ -27,6 +27,7 @@
   // nums(size) gives the price list for a car size; "from" means a starting price.
   const SERVICES = [
     ...SITE.PACKS.map((p) => ({ name: p.name, icon: p.icon, group: "Detailing packs", from: false, per: "", nums: (size) => [p.prices[size]] })),
+    ...(SITE.MONTHLY || []).map((p) => ({ name: p.name, icon: p.icon, group: "Monthly plans", monthly: true, visits: p.visits, from: false, per: "", nums: (size) => [p.prices[size]] })),
     ...SITE.SPECIALS.map((x) => ({ name: x.name, icon: x.icon, group: "Coatings and specialist", from: !!x.from, per: x.per || "", nums: () => [x.price] }))
   ];
   const serviceByName = (n) => SERVICES.find((x) => x.name === n);
@@ -93,7 +94,8 @@
   $$("[data-price-of]").forEach((el) => {
     const name = el.dataset.priceOf;
     const svc = serviceByName(name), add = ADDONS[name];
-    if (svc) el.textContent = svc.per ? "₹" + formatINR(svc.nums()[0]) + " per " + svc.per : ("plain" in el.dataset ? rangeText(svc.nums()) : money(svc.nums(), svc.from));
+    if (svc && el.dataset.size) el.textContent = "₹" + formatINR(svc.nums(el.dataset.size)[0]);
+    else if (svc) el.textContent = svc.per ? "₹" + formatINR(svc.nums()[0]) + " per " + svc.per : ("plain" in el.dataset ? rangeText(svc.nums()) : money(svc.nums(), svc.from));
     else if (add) el.textContent = money([add.price], add.from);
   });
   const lowestAddon = Math.min(...SITE.ADDONS.map((a) => a.price));

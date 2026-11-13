@@ -32,11 +32,19 @@ window.SITE = {
 
   // Detailing packs: price for each car size
   PACKS: [
+    { name: "Exterior Wash", icon: "i-drop", prices: { small: 499, mid: 599, big: 599 } },
+    { name: "Interior Clean", icon: "i-car", prices: { small: 599, mid: 699, big: 699 } },
     { name: "Basic Wash", icon: "i-drop", prices: { small: 799, mid: 799, big: 799 } },
-    { name: "Interior Deep Clean", icon: "i-sparkle", prices: { small: 1999, mid: 2499, big: 2999 } },
-    { name: "Exterior Detailing", icon: "i-bubbles", prices: { small: 1199, mid: 1499, big: 1799 } },
+    { name: "Premium Exterior Detailing", icon: "i-bubbles", prices: { small: 1199, mid: 1499, big: 1799 } },
+    { name: "Premium Interior Deep Clean", icon: "i-sparkle", prices: { small: 1999, mid: 2499, big: 2999 } },
     { name: "Exterior Decon Wash", icon: "i-shield", prices: { small: 2499, mid: 2749, big: 2999 } },
     { name: "Paint Correction", icon: "i-gem", prices: { small: 6999, mid: 8499, big: 9999 } }
+  ],
+
+  // Monthly plans: price per month for each car size, "visits" = washes per month
+  MONTHLY: [
+    { name: "Monthly Exterior Plan", icon: "i-cal", visits: 4, prices: { small: 1499, mid: 1999, big: 1999 } },
+    { name: "Monthly Complete Car Wash", icon: "i-cal", visits: 4, prices: { small: 2999, mid: 3499, big: 3499 } }
   ],
 
   // Coatings and specialist services. "from: true" = starting price.
@@ -54,7 +62,7 @@ window.SITE = {
     { name: "Car bug removal", icon: "i-bug", price: 999 },
     { name: "Water spot removal", icon: "i-spot", price: 999 },
     { name: "Paint transfer removal", icon: "i-brush", price: 999 },
-    { name: "AC disinfection", icon: "i-snow", price: 1199, from: true, includedIn: "Interior Deep Clean" }
+    { name: "AC disinfection", icon: "i-snow", price: 1199, from: true, includedIn: "Premium Interior Deep Clean" }
   ],
 
   // Places we serve. "aka" = other spellings people type.
